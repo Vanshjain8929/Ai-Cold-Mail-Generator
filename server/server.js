@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const path = require('path');
 
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
@@ -14,11 +13,20 @@ dotenv.config();
 process.env.MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
 
 // Validate required environment variables
-const requiredEnvVars = ['MONGO_URI', 'JWT_SECRET', 'GROQ_API_KEY'];
-const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+const requiredEnvVars = [
+    'MONGO_URI',
+    'JWT_SECRET',
+    'GROQ_API_KEY'
+];
+
+const missingEnvVars = requiredEnvVars.filter(
+    (envVar) => !process.env[envVar]
+);
 
 if (missingEnvVars.length > 0) {
-    console.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+    console.error(
+        `Missing required environment variables: ${missingEnvVars.join(', ')}`
+    );
     process.exit(1);
 }
 
@@ -27,42 +35,59 @@ connectDB();
 
 const app = express();
 
-app.use(cors({
-    origin: process.env.FRONTEND_URL || true,
-    credentials: true
-}));
+// Middleware
+app.use(
+    cors({
+        origin: process.env.FRONTEND_URL,
+        credentials: true,
+    })
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
 
-// Absolute path to client build folder
-const __dirnamePath = path.resolve();
-const clientBuildPath = path.join(__dirnamePath, '..', 'client', 'dist');
-
-// Serve static files
-app.use(express.static(clientBuildPath));
-
-// For any non-API GET request, send index.html
-app.use((req, res, next) => {
-    if (req.method === 'GET' && !req.path.startsWith('/api')) {
-        return res.sendFile(path.join(clientBuildPath, 'index.html'));
-    }
-
-    next();
+// Root Route
+app.get('/', (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: '🚀 AI Cold Mail Generator API is running',
+    });
 });
 
+// Health Check Route
+app.get('/api/health', (req, res) => {
+    res.status(200).json({
+        status: 'OK',
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+    });
+});
 
+// 404 Handler
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Route not found',
+    });
+});
+
+// Global Error Handler
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ message: 'Server Error', error: err.message });
+    console.error(err);
+
+    res.status(err.status || 500).json({
+        success: false,
+        message: err.message || 'Internal Server Error',
+    });
 });
 
+// Start Server
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });
