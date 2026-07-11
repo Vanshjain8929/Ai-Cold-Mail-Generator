@@ -8,7 +8,7 @@ const authRoutes = require('./routes/authRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 
 // Load environment variables
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Validate required environment variables
 const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET', 'GROQ_API_KEY'];
@@ -37,16 +37,17 @@ app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
 
 // Absolute path to client build folder
-const __dirnamePath = path.resolve();
-const clientBuildPath = path.join(__dirnamePath, '..', 'client', 'dist');
+const clientBuildPath = path.join(__dirname, '..', 'client', 'dist');
 
 // Serve static files
 app.use(express.static(clientBuildPath));
 
 // For any route not starting with /api, send index.html
-app.get('*', (req, res) => {
+app.use((req, res, next) => {
     if (!req.path.startsWith('/api')) {
         res.sendFile(path.join(clientBuildPath, 'index.html'));
+    } else {
+        next();
     }
 });
 
