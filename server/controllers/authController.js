@@ -14,59 +14,56 @@ const generateOTP = () => {
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { username, email, password } = req.body;
 
-    // Input validation
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Name, email, and password are required' });
+    if (!username || !email || !password) {
+      return res.status(400).json({
+        message: "Username, email and password are required"
+      });
     }
 
-    if (email && !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      return res.status(400).json({ message: 'Please provide a valid email address' });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
-    }
-
-    if (name.length < 2) {
-      return res.status(400).json({ message: 'Name must be at least 2 characters long' });
-    }
-
-    const userExists = await User.findOne({ email: email.toLowerCase() });
+    const userExists = await User.findOne({
+      email: email.toLowerCase()
+    });
 
     if (userExists) {
-      return res.status(400).json({ message: 'Email already registered. Please try logging in.' });
+      return res.status(400).json({
+        message: "Email already registered"
+      });
     }
 
     const otp = generateOTP();
-    const otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+    const otpExpiry = Date.now() + 10 * 60 * 1000;
 
     const user = await User.create({
-      name: name.trim(),
+      username: username.trim(),
       email: email.toLowerCase(),
       password,
       otp,
       otpExpiry
     });
 
-    // Send OTP email
-    const message = `Your OTP for verification is: ${otp}\n\nThis OTP is valid for 10 minutes.`;
     try {
-      await sendEmail({ email: user.email, subject: 'Email Verification OTP - AI Cold Mail Generator', message });
-    } catch (error) {
-      console.log('Email sending error:', error.message);
-      // Still allow registration even if email fails
+      await sendEmail({
+        to: user.email,
+        subject: "Email Verification OTP",
+        text: `Your OTP is ${otp}`
+      });
+    } catch (err) {
+      console.log(err.message);
     }
 
     res.status(201).json({
-      message: 'User registered successfully. Please verify OTP sent to your email.',
+      message: "User registered successfully",
       userId: user._id,
       email: user.email
     });
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ message: 'Registration failed', error: error.message });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: err.message
+    });
   }
 };
 
@@ -111,7 +108,7 @@ exports.verifyOtp = async (req, res) => {
 
     res.status(200).json({
       _id: user._id,
-      name: user.name,
+      username: user.username,
       email: user.email,
       token: generateToken(user._id),
       message: 'Email verified successfully!'
@@ -152,7 +149,7 @@ exports.login = async (req, res) => {
 
     res.status(200).json({
       _id: user._id,
-      name: user.name,
+      username: user.username,
       email: user.email,
       token: generateToken(user._id),
       message: 'Login successful!'
