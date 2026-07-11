@@ -1,32 +1,21 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 
-// Load environment variables from server/.env
-dotenv.config({ path: __dirname + '/.env' });
-
-// Support either env name while keeping the DB connector on MONGO_URI
-process.env.MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
+// Load environment variables
+dotenv.config();
 
 // Validate required environment variables
-const requiredEnvVars = [
-    'MONGO_URI',
-    'JWT_SECRET',
-    'GROQ_API_KEY'
-];
-
-const missingEnvVars = requiredEnvVars.filter(
-    (envVar) => !process.env[envVar]
-);
+const requiredEnvVars = ['MONGODB_URI', 'JWT_SECRET', 'GROQ_API_KEY'];
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
-    console.error(
-        `Missing required environment variables: ${missingEnvVars.join(', ')}`
-    );
+    console.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
     process.exit(1);
 }
 
@@ -35,59 +24,40 @@ connectDB();
 
 const app = express();
 
-// Middleware
-app.use(
-    cors({
-        origin: process.env.FRONTEND_URL,
-        credentials: true,
-    })
-);
+app.use(cors({
+    origin: process.env.FRONTEND_URL || true,
+    credentials: true
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
+
 app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
 
-// Root Route
-app.get('/', (req, res) => {
-    res.status(200).json({
-        success: true,
-        message: '🚀 AI Cold Mail Generator API is running',
-    });
+// Absolute path to client build folder
+const __dirnamePath = path.resolve();
+const clientBuildPath = path.join(__dirnamePath, '..', 'client', 'dist');
+
+// Serve static files
+app.use(express.static(clientBuildPath));
+
+// For any route not starting with /api, send index.html
+app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+        res.sendFile(path.join(clientBuildPath, 'index.html'));
+    }
 });
 
-// Health Check Route
-app.get('/api/health', (req, res) => {
-    res.status(200).json({
-        status: 'OK',
-        uptime: process.uptime(),
-        timestamp: new Date().toISOString(),
-    });
-});
 
-// 404 Handler
-app.use((req, res) => {
-    res.status(404).json({
-        success: false,
-        message: 'Route not found',
-    });
-});
-
-// Global Error Handler
 app.use((err, req, res, next) => {
-    console.error(err);
-
-    res.status(err.status || 500).json({
-        success: false,
-        message: err.message || 'Internal Server Error',
-    });
+    console.error(err.stack);
+    res.status(500).json({ message: 'Server Error', error: err.message });
 });
 
-// Start Server
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
