@@ -1,164 +1,233 @@
-const User = require('../models/User');
-const jwt = require('jsonwebtoken');
-const sendEmail = require('../utils/emailService');
+const axios = require('axios');
+const EmailHistory = require('../models/EmailHistory');
 
-// Generate JWT Token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
-};
-
-// Generate 6-digit OTP
-const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-};
-
-exports.registerUser = async (req, res) => {
+exports.generateEmail = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { prompt } = req.body;
 
-    // Input validation
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Name, email, and password are required' });
+    if (!prompt) {
+      return res.status(400).json({ message: 'Prompt is required' });
     }
 
-    if (email && !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      return res.status(400).json({ message: 'Please provide a valid email address' });
+    if (typeof prompt !== 'string') {
+      return res.status(400).json({ message: 'Prompt must be a string' });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    if (prompt.trim().length === 0) {
+      return res.status(400).json({ message: 'Prompt cannot be empty' });
     }
 
-    if (name.length < 2) {
-      return res.status(400).json({ message: 'Name must be at least 2 characters long' });
+    if (prompt.length > 2000) {
+      return res.status(400).json({ message: 'Prompt cannot exceed 2000 characters' });
     }
 
-    const userExists = await User.findOne({ email: email.toLowerCase() });
-
-    if (userExists) {
-      return res.status(400).json({ message: 'Email already registered. Please try logging in.' });
+    // Call Groq API (Free tier - No quota issues!)
+    const groqApiKey = process.env.GROQ_API_KEY;
+    if (!groqApiKey) {
+      return res.status(500).json({ message: 'AI service is not configured' });
     }
 
-    const otp = generateOTP();
-    const otpExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+    const systemPrompt = `You are an expert job outreach strategist.
 
-    const user = await User.create({
-      name: name.trim(),
-      email: email.toLowerCase(),
-      password,
-      otp,
-      otpExpiry
-    });
+Your task is to generate a HIGH-CONVERTING cold email to a recruiter for a job opportunity.
 
-    // Send OTP email
-    const message = `Your OTP for verification is: ${otp}\n\nThis OTP is valid for 10 minutes.`;
+IMPORTANT:
+- Even if the user gives only 2–4 words, assume realistic context.
+- Do NOT ask for clarification.
+- Make professional assumptions.
+- Avoid generic phrases.
+- Keep it concise and structured.
+
+====================================================
+OUTPUT FORMAT (STRICT)
+====================================================
+
+Return ONLY valid JSON:
+
+{
+  "subject": "",
+  "emailBody": "",
+  "linkedInDM": "",
+  "followUpEmail": ""
+}
+
+No markdown.
+No explanations.
+Only JSON.
+
+====================================================
+CONTEXT ASSUMPTIONS
+====================================================
+
+Assume:
+- Candidate has 2+ years experience
+- Strong in DSA and system design
+- Has worked on backend APIs or scalable systems
+- Has contributed to production-level features
+- Actively seeking Software Engineer roles
+
+If prompt is short like:
+"SDE role"
+"Backend engineer"
+"Startup job"
+"Product company"
+
+Create intelligent assumptions about:
+- Scaling challenges
+- Hiring urgency
+- Performance or system reliability issues
+- Team growth
+
+====================================================
+SUBJECT LINE RULES
+====================================================
+
+• 6–9 words
+• Must sound confident
+• No generic phrases like:
+  - "Quick question"
+  - "Looking for opportunity"
+  - "Job application"
+• Should highlight value or experience
+
+Example styles:
+"Backend engineer with 2+ yrs scaling APIs"
+"Engineer focused on scalable system design"
+"Software engineer improving system performance"
+
+====================================================
+EMAIL BODY STRUCTURE (STRICT)
+====================================================
+
+Keep 60–90 words.
+
+Line 1: Personalized observation about hiring  
+Line 2: Mention common hiring/scaling challenge  
+Line 3-4: Candidate's experience and strengths  
+Line 5: Specific impact or contribution  
+Line 6: Clear CTA  
+Line 7: Sign-off with name and title  
+
+Tone:
+• Confident
+• Professional
+• Not desperate
+• No emojis
+• No hype words
+
+====================================================
+LINKEDIN DM STRUCTURE
+====================================================
+
+30–50 words.
+Short, conversational.
+Observation + value + soft ask.
+
+====================================================
+FOLLOW-UP EMAIL STRUCTURE
+====================================================
+
+50–80 words.
+New angle.
+Emphasize long-term value.
+Professional urgency.
+Clear CTA.
+
+====================================================
+
+Return ONLY valid JSON.`;
+    
+    const fullPrompt = `${systemPrompt}\n\nUser REQUEST: "${prompt.trim()}"\n\nGenerate STRONG cold email even if prompt is short. Make smart assumptions. Return ONLY valid JSON:\n{"subject": "...", "emailBody": "...", "linkedInDM": "...", "followUpEmail": "..."}`;
+    const aiResponse = await axios.post(
+      'https://api.groq.com/openai/v1/chat/completions',
+      {
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          {
+            role: "user",
+            content: fullPrompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1024
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000
+      }
+    );
+
+    // Parse the Groq response
+    if (!aiResponse.data.choices || !aiResponse.data.choices[0] || !aiResponse.data.choices[0].message) {
+      throw new Error('Invalid response from Groq API');
+    }
+
+    const generatedText = aiResponse.data.choices[0].message.content;
+    
+    // Extract JSON from the response
+    const jsonMatch = generatedText.match(/\{[\s\S]*\}/);
+    let parsedResponse;
+    
     try {
-      await sendEmail({ email: user.email, subject: 'Email Verification OTP - AI Cold Mail Generator', message });
-    } catch (error) {
-      console.log('Email sending error:', error.message);
-      // Still allow registration even if email fails
-    }
-
-    res.status(201).json({
-      message: 'User registered successfully. Please verify OTP sent to your email.',
-      userId: user._id,
-      email: user.email
-    });
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ message: 'Registration failed', error: error.message });
-  }
-};
-
-exports.verifyOTP = async (req, res) => {
-  try {
-    const { userId, otp } = req.body;
-
-    if (!userId || !otp) {
-      return res.status(400).json({ message: 'User ID and OTP are required' });
-    }
-
-    if (!/^\d{6}$/.test(otp)) {
-      return res.status(400).json({ message: 'OTP must be a 6-digit number' });
-    }
-
-    const user = await User.findById(userId);
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (user.isVerified) {
-      return res.status(400).json({ message: 'User already verified. Please login.' });
-    }
-
-    if (!user.otp || !user.otpExpiry) {
-      return res.status(400).json({ message: 'No OTP found. Please register again.' });
-    }
-
-    if (Date.now() > user.otpExpiry.getTime()) {
-      return res.status(400).json({ message: 'OTP has expired. Please register again.' });
-    }
-
-    if (user.otp !== otp) {
-      return res.status(400).json({ message: 'Invalid OTP. Please try again.' });
-    }
-
-    user.isVerified = true;
-    user.otp = undefined;
-    user.otpExpiry = undefined;
-    await user.save();
-
-    res.status(200).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      token: generateToken(user._id),
-      message: 'Email verified successfully!'
-    });
-  } catch (error) {
-    console.error('OTP verification error:', error);
-    res.status(500).json({ message: 'Verification failed', error: error.message });
-  }
-};
-
-exports.loginUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // Input validation
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
-    }
-
-    const user = await User.findOne({ email: email.toLowerCase() });
-
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
-
-    if (!user.isVerified) {
-      return res.status(401).json({ 
-        message: 'Please verify your email first',
-        userId: user._id
+      parsedResponse = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(generatedText);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError, 'Generated text:', generatedText);
+      return res.status(500).json({ 
+        message: 'Failed to parse AI response', 
+        error: 'The AI generated invalid JSON. Please try again.' 
       });
     }
 
-    const isPasswordValid = await user.matchPassword(password);
+    const emailData = {
+      subject: parsedResponse.subject || "New Opportunity",
+      emailBody: parsedResponse.emailBody || "",
+      linkedInDM: parsedResponse.linkedInDM || "",
+      followUpEmail: parsedResponse.followUpEmail || ""
+    };
 
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+    // Validate response data
+    if (!emailData.subject || !emailData.emailBody) {
+      return res.status(500).json({ 
+        message: 'AI generated incomplete email data. Please try again.' 
+      });
     }
 
-    res.status(200).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      token: generateToken(user._id),
-      message: 'Login successful!'
+    // Save to history
+    const historyEntry = await EmailHistory.create({
+      userId: req.user._id,
+      prompt: prompt.trim(),
+      subject: emailData.subject,
+      emailBody: emailData.emailBody,
+      linkedInDM: emailData.linkedInDM,
+      followUpEmail: emailData.followUpEmail
     });
+
+    res.status(200).json(historyEntry);
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ message: 'Login failed', error: error.message });
+    console.error('AI Generation Error:', error.response?.data || error.message);
+    
+    if (error.response?.status === 429) {
+      return res.status(429).json({ 
+        message: 'Too many requests. Please wait a moment before trying again.',
+        error: 'Rate limit exceeded'
+      });
+    }
+
+    res.status(500).json({ 
+      message: 'Failed to generate email', 
+      error: error.response?.data?.error?.message || error.message 
+    });
+  }
+};
+
+exports.getHistory = async (req, res) => {
+  try {
+    const history = await EmailHistory.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    res.status(200).json(history);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch history' });
   }
 };
