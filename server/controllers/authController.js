@@ -14,55 +14,82 @@ const generateOTP = () => {
 
 exports.register = async (req, res) => {
   try {
+    console.log("\n========== REGISTER START ==========");
+
     const { username, email, password } = req.body;
+
+    console.log("Request Body:", req.body);
 
     if (!username || !email || !password) {
       return res.status(400).json({
-        message: "Username, email and password are required"
+        message: "Username, email and password are required",
       });
     }
 
+    console.log("Checking existing user...");
+
     const userExists = await User.findOne({
-      email: email.toLowerCase()
+      email: email.toLowerCase(),
     });
 
     if (userExists) {
+      console.log("User already exists");
       return res.status(400).json({
-        message: "Email already registered"
+        message: "Email already registered",
       });
     }
 
+    console.log("Generating OTP...");
+
     const otp = generateOTP();
     const otpExpiry = Date.now() + 10 * 60 * 1000;
+
+    console.log("Creating user...");
 
     const user = await User.create({
       username: username.trim(),
       email: email.toLowerCase(),
       password,
       otp,
-      otpExpiry
+      otpExpiry,
     });
+
+    console.log("✅ User created successfully");
+    console.log("User ID:", user._id);
+
+    console.log("\nCalling sendEmail()...");
 
     try {
       await sendEmail({
-        to: user.email,
+        email: user.email,              // ✅ use email
         subject: "Email Verification OTP",
-        text: `Your OTP is ${otp}`
+        message: `Your OTP is ${otp}`,  // ✅ use message
       });
+
+      console.log("✅ sendEmail() completed");
     } catch (err) {
-      console.log(err.message);
+      console.error("❌ sendEmail() failed");
+      console.error(err.message);
+      console.error(err.stack);
     }
+
+    console.log("Sending API response...");
+    console.log("========== REGISTER END ==========\n");
 
     res.status(201).json({
       message: "User registered successfully",
       userId: user._id,
-      email: user.email
+      email: user.email,
     });
 
   } catch (err) {
+    console.error("\n========== REGISTER ERROR ==========");
     console.error(err);
+    console.error(err.stack);
+    console.error("========== REGISTER ERROR END ==========\n");
+
     res.status(500).json({
-      message: err.message
+      message: err.message,
     });
   }
 };
