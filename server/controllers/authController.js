@@ -61,17 +61,15 @@ exports.register = async (req, res) => {
     } catch (emailError) {
       console.error('OTP email failed:', emailError);
       lastEmailError = emailError;
-      // Don't return early — let the user try verification with the OTP returned in dev
     }
 
     console.log("STEP 5");
 
-    // In development, return the OTP for convenience. In production, only return it if email failed.
-    const returnOtp = !isProduction || !emailSent;
-
+    // Return OTP in response when email fails (in any environment)
+    // so the user can still complete verification
     const message = emailSent
       ? 'User registered successfully. Please check your email for the OTP.'
-      : 'User registered successfully, but email delivery failed. OTP returned for verification.';
+      : 'User registered successfully, but email delivery failed. OTP shown below for verification.';
 
     res.status(201).json({
       message,
@@ -80,8 +78,7 @@ exports.register = async (req, res) => {
         username: user.username,
         email: user.email
       },
-      ...(returnOtp ? { otp } : {}),
-      ...(!emailSent ? { emailWarning: lastEmailError?.response || lastEmailError?.message } : {})
+      ...(!emailSent ? { otp, emailWarning: lastEmailError?.response || lastEmailError?.message } : {})
     });
 
   } catch (error) {

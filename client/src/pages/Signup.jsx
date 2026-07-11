@@ -34,9 +34,15 @@ const Signup = () => {
         setLoading(true);
         try {
             const { data } = await api.post('/auth/register', { username: name, email, password });
-            toast.success(data.message);
 
-            navigate('/verify-otp', { state: { email } });
+            // If email delivery failed, show the OTP so user can still complete verification
+            if (data.otp) {
+                toast.error(`Email delivery issue: ${data.message}. Your OTP is: ${data.otp}. Please enter it manually.`);
+                navigate('/verify-otp', { state: { email } });
+            } else {
+                toast.success(data.message);
+                navigate('/verify-otp', { state: { email } });
+            }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Registration failed');
         } finally {
