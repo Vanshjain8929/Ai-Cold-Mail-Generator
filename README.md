@@ -1,98 +1,337 @@
-# AI Cold Email Generator (Monorepo)
+# 🚀 AI Cold Mail Generator
 
-A fully dockerized full-stack MERN application that uses AI to generate customized cold emails, LinkedIn DMs, and follow-up emails based on user prompts.
+An AI-powered Full Stack MERN application that helps users generate professional cold emails, LinkedIn connection messages, and follow-up emails using AI.
 
-## Features Added
-- **Monorepo setup**: Single `package.json` to install and run the entire stack concurrently.
-- **Docker & Docker Compose**: Bootstraps the Node API, React Frontend, and MongoDB database automatically in isolated containers.
-- **CI/CD via GitHub Actions**: Ensures that all dependencies install correctly and frontend builds continuously upon pushing changes to GitHub.
+The application includes secure authentication with OTP verification, AI-powered email generation using Groq, email history management, and a modern responsive dashboard.
 
 ---
 
-## 🚀 How to Run Locally (Using Concurrently)
+# 🌟 Features
 
-**1. Install all dependencies**  
-Run this command from the root folder (it installs root, server, and client Node dependencies):
-\`\`\`bash
+## 🤖 AI Email Generation
+- Generate professional cold emails instantly
+- AI-powered by Groq LLM
+- Supports:
+  - Cold Emails
+  - Follow-up Emails
+  - LinkedIn Messages
+- Copy generated emails with one click
+
+---
+
+## 🔐 Authentication
+
+- User Signup
+- Login
+- Email OTP Verification
+- JWT Authentication
+- Protected Routes
+- Password Encryption using bcrypt
+
+---
+
+## 📧 Email Verification
+
+- Beautiful HTML OTP Emails
+- OTP expires in 10 minutes
+- Email delivery powered by Brevo API
+- Verified sender support
+
+---
+
+## 📜 Email History
+
+- Stores every generated email
+- History stored securely in MongoDB
+- User-specific history
+- Each user can only access their own generated emails
+
+---
+
+## 👤 User Profile
+
+- View account details
+- Logout securely
+- Protected Dashboard
+
+---
+
+## 🎨 Modern UI
+
+- Responsive Design
+- React + Vite
+- Tailwind CSS
+- Toast Notifications
+- Beautiful Dashboard Layout
+
+---
+
+# 🛠 Tech Stack
+
+## Frontend
+
+- React
+- Vite
+- Tailwind CSS
+- React Router DOM
+- Axios
+- React Hot Toast
+
+---
+
+## Backend
+
+- Node.js
+- Express.js
+- MongoDB
+- Mongoose
+- JWT Authentication
+- bcrypt
+- Groq API
+- Brevo Email API
+
+---
+
+# 📂 Project Structure
+
+```
+AI-Cold-Mail-Generator
+│
+├── client
+│   ├── src
+│   ├── public
+│   └── package.json
+│
+├── server
+│   ├── config
+│   ├── controllers
+│   ├── middleware
+│   ├── models
+│   ├── routes
+│   ├── utils
+│   └── server.js
+│
+├── package.json
+└── README.md
+```
+
+---
+
+# ⚙️ Environment Variables
+
+## Server (.env)
+
+```env
+PORT=5000
+
+MONGODB_URI=your_mongodb_connection_string
+
+JWT_SECRET=your_jwt_secret
+
+GROQ_API_KEY=your_groq_api_key
+
+BREVO_API_KEY=your_brevo_api_key
+
+EMAIL_USER=your_verified_sender_email
+
+FRONTEND_URL=http://localhost:5173
+```
+
+---
+
+## Client (.env)
+
+```env
+VITE_API_BASE_URL=http://localhost:5000/api
+```
+
+---
+
+# 🚀 Installation
+
+Clone the repository
+
+```bash
+git clone https://github.com/Vanshjain8929/Ai-Cold-Mail-Generator.git
+```
+
+Move inside the project
+
+```bash
+cd Ai-Cold-Mail-Generator
+```
+
+Install all dependencies
+
+```bash
 npm run install:all
-\`\`\`
+```
 
-**2. Setup your Environment Variables**  
-- Create a `.env` in the `/server` folder based on `.env.example`. Make sure your `MONGO_URI` is correctly pointing to your preferred MongoDB instance.  
-- Create a `.env` in the `/client` folder with: `VITE_API_URL=http://localhost:5000/api`
+---
 
-**3. Run the Monorepo**  
-Start both the Frontend and Backend simultaneously:
-\`\`\`bash
+# ▶️ Run Locally
+
+Start both frontend and backend simultaneously
+
+```bash
 npm run dev
-\`\`\`
-The GUI will be on `http://localhost:5173` and the API firmly rooted at `http://localhost:5000`.
+```
+
+Frontend
+
+```
+http://localhost:5173
+```
+
+Backend
+
+```
+http://localhost:5000
+```
 
 ---
 
-## 🐳 How to Run with Docker
+# 🤖 AI Workflow
 
-If you prefer using Docker, you don't even need to install Node locally. Docker Compose will spin up 3 instances automatically:
-1. React Frontend Container
-2. Node API Container
-3. MongoDB Database Container
-
-**Steps:**
-1. Be in the root folder.
-2. Ensure Docker Desktop is open and running.
-3. Build and spin up the architecture:
-   \`\`\`bash
-   docker-compose up --build
-   \`\`\`
-   *(Note: This uses the environment variables configured within the `docker-compose.yml` file. Update the secrets inside that file before running it in production).*
-
-To stop containers:
-\`\`\`bash
-docker-compose down
-\`\`\`
-
----
-
-## 🔁 CI/CD (GitHub Actions Pipeline)
-
-This repository includes a `.github/workflows/pipeline.yml` file. 
-
-Whenever you push to `main` (or create a Pull Request against it), GitHub Actions will automatically:
-- Checkout your code.
-- Setup Node.js v18.
-- Install Root, Client, and Server dependencies respectively.
-- Run a `npm run build` on your `/client` to ensure Vite successfully bundles the frontend. 
-
-It prevents bad pushes from making it effectively resolving broken dependencies early on.
+```
+User Prompt
+      │
+      ▼
+Frontend
+      │
+      ▼
+Express Backend
+      │
+      ▼
+Groq AI API
+      │
+      ▼
+Generated Email
+      │
+      ▼
+Stored in MongoDB
+      │
+      ▼
+Displayed in Dashboard & History
+```
 
 ---
 
-## Deployment Guide (Free Tier)
+# 🔒 Authentication Flow
 
-### Deploying Backend on Render
+```
+Register
+    │
+    ▼
+Generate OTP
+    │
+    ▼
+Send OTP via Brevo
+    │
+    ▼
+Verify OTP
+    │
+    ▼
+Generate JWT
+    │
+    ▼
+Access Dashboard
+```
 
-1. Create an account on [Render](https://render.com/).
-2. Push this whole repository to GitHub.
-3. On Render, click **New +** and select **Web Service**.
-4. Connect your GitHub repository.
-5. Configure the Web Service:
-   - **Name**: ai-cold-email-backend
-   - **Root Directory**: `server`
-   - **Environment**: Node
-   - **Build Command**: `npm install`
-   - **Start Command**: `node server.js`  *(Make sure to use node instead of nodemon for production)*
-   - **Instance Type**: Free
-6. Under **Environment Variables**, add all the variables from your `.env` file (e.g. `MONGO_URI`, `JWT_SECRET`, `AI_API_KEY`).
-7. Click **Create Web Service**.
+---
 
-### Deploying Frontend on Vercel
+# 🌐 Deployment
 
-1. Create an account on [Vercel](https://vercel.com/).
-2. Click **Add New... > Project** and import your GitHub repository.
-3. Configure the Project:
-   - **Framework Preset**: Vite
-   - **Root Directory**: `client`
-4. Under **Environment Variables**, add:
-   - `VITE_API_URL`: Your newly minted Backend URL + `/api` (e.g., `https://ai-backend.onrender.com/api`)
-5. Click **Deploy**. Vercel will deploy your frontend seamlessly.
-6. **Important**: Remember to go back to Render and update your backend `FRONTEND_URL` Variable to the Vercel domain to dodge tricky CORS errors.
+## Backend
+
+Hosted on **Render**
+
+Environment Variables Required
+
+- MONGODB_URI
+- JWT_SECRET
+- GROQ_API_KEY
+- BREVO_API_KEY
+- EMAIL_USER
+- FRONTEND_URL
+
+Build Command
+
+```bash
+npm install
+```
+
+Start Command
+
+```bash
+node server.js
+```
+
+---
+
+## Frontend
+
+Hosted on **Vercel**
+
+Environment Variable
+
+```env
+VITE_API_BASE_URL=https://your-render-backend-url/api
+```
+
+---
+
+# 📸 Application Screens
+
+- Landing Page
+- Login
+- Signup
+- OTP Verification
+- Dashboard
+- AI Email Generator
+- Email History
+- User Profile
+
+---
+
+# 🔐 Security Features
+
+- Password Hashing (bcrypt)
+- JWT Authentication
+- Protected Routes
+- User-specific History
+- Secure Environment Variables
+- Input Validation
+
+---
+
+# ✨ Future Improvements
+
+- Resend OTP
+- Forgot Password
+- Dark Mode
+- Export Emails
+- Delete History
+- AI Tone Selection
+- Email Templates
+- Analytics Dashboard
+
+---
+
+# 👨‍💻 Author
+
+**Vansh Jain**
+
+GitHub
+
+https://github.com/Vanshjain8929
+
+LinkedIn
+
+www.linkedin.com/in/vansh-jain-3b3444289
+
+---
+
+# ⭐ If you like this project
+
+Please consider giving the repository a ⭐ on GitHub.
