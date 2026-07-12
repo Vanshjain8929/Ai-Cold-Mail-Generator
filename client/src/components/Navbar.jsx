@@ -5,75 +5,60 @@ export default function Navbar() {
   const { user } = useAuth();
 
   return (
-    <header className="bg-white border-b h-20 px-8 flex items-center justify-between sticky top-0 z-20">
+    <header className="bg-white border-b shadow-sm px-8 py-4">
 
-      {/* Left */}
+      <div className="flex items-center justify-between">
 
-      <div>
+        {/* Left */}
 
-        <h1 className="text-2xl font-bold text-gray-800">
-          AI Cold Mail Generator
-        </h1>
+        <div>
 
-        <p className="text-sm text-gray-500">
-          Welcome back, {user?.username} 👋
-        </p>
+          <h1 className="text-2xl font-bold text-gray-800">
+            AI Cold Mail Generator
+          </h1>
 
-      </div>
-
-      {/* Right */}
-
-      <div className="flex items-center gap-5">
-
-        {/* Search */}
-
-        <div className="hidden lg:flex items-center bg-gray-100 rounded-xl px-4 py-2 w-72">
-
-          <Search
-            size={18}
-            className="text-gray-500"
-          />
-
-          <input
-            placeholder="Search..."
-            className="bg-transparent outline-none ml-3 flex-1"
-          />
+          <p className="text-gray-500 mt-1">
+            Welcome back, {user?.username}
+          </p>
 
         </div>
 
-        {/* Notification */}
+        {/* Right */}
 
-        <button className="relative h-11 w-11 rounded-xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center">
+        <div className="flex items-center gap-5">
 
-          <Bell size={20} />
+          {/* Search */}
 
-          <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full"></span>
+          <div className="hidden lg:flex items-center bg-gray-100 rounded-xl px-4 py-2 w-72">
 
-        </button>
+            <Search
+              size={18}
+              className="text-gray-500"
+            />
 
-        {/* User */}
-
-        <div className="flex items-center gap-3 bg-gray-100 rounded-xl px-3 py-2">
-
-          <div className="h-10 w-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
-
-            {user?.username?.charAt(0).toUpperCase()}
+            <input
+              type="text"
+              placeholder="Search..."
+              className="bg-transparent ml-3 outline-none w-full"
+            />
 
           </div>
 
-          <div className="hidden md:block">
+          {/* Notification */}
 
-            <h3 className="font-semibold">
+          <button className="relative p-2 rounded-xl hover:bg-gray-100 transition">
 
-              {user?.username}
+            <Bell size={22} />
 
-            </h3>
+            <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-500"></span>
 
-            <p className="text-xs text-gray-500">
+          </button>
 
-              {user?.email}
+          {/* Avatar */}
 
-            </p>
+          <div className="h-12 w-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg shadow">
+
+            {user?.username?.charAt(0).toUpperCase()}
 
           </div>
 

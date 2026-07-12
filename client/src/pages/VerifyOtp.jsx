@@ -87,9 +87,6 @@ export default function VerifyOtp() {
 
             <div className="bg-white shadow-xl rounded-xl p-8 w-full max-w-md">
 
-                <h1 className="text-6xl text-red-600">
-                    THIS IS VERIFY OTP PAGE
-                </h1>
 
                 <p className="text-gray-500 text-center mb-6">
                     Enter the OTP sent to your email

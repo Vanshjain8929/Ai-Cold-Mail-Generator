@@ -1,54 +1,111 @@
-import { Copy } from "lucide-react";
+import { Copy, Download, Mail, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function EmailCard({
-
-    title,
-    content,
-
+  title,
+  content,
+  loading,
+  onRegenerate,
 }) {
+  const copyText = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      toast.success("Copied to clipboard");
+    } catch {
+      toast.error("Failed to copy");
+    }
+  };
 
-    const copy = () => {
+  const downloadText = () => {
+    const blob = new Blob([content], { type: "text/plain" });
 
-        navigator.clipboard.writeText(content);
+    const url = window.URL.createObjectURL(blob);
 
-        toast.success("Copied");
+    const link = document.createElement("a");
 
-    };
+    link.href = url;
+    link.download = `${title.replace(/\s+/g, "_")}.txt`;
 
-    return (
+    link.click();
 
-        <div className="bg-white rounded-xl shadow p-6">
+    window.URL.revokeObjectURL(url);
 
-            <div className="flex justify-between mb-4">
+    toast.success("Downloaded");
+  };
 
-                <h2 className="font-bold text-lg">
+  const getIcon = () => {
+    switch (title) {
+      case "Subject":
+        return <Mail className="text-blue-600" size={22} />;
 
-                    {title}
+      case "LinkedIn DM":
+        return <Mail className="text-blue-600" size={22} />;
 
-                </h2>
+      default:
+        return <Mail className="text-blue-600" size={22} />;
+    }
+  };
 
-                <button
-                    onClick={copy}
-                    className="flex gap-2 items-center text-blue-600 hover:text-blue-700"
-                >
+  return (
+    <div className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden">
 
-                    <Copy size={18} />
+      <div className="flex justify-between items-center border-b px-6 py-4">
 
-                    Copy
+        <div className="flex items-center gap-3">
 
-                </button>
+          {getIcon()}
 
-            </div>
+          <h2 className="font-bold text-lg">
 
-            <div className="whitespace-pre-wrap leading-7 text-gray-700">
+            {title}
 
-                {content}
-
-            </div>
+          </h2>
 
         </div>
 
-    );
+        <div className="flex gap-2">
 
+          <button
+            onClick={copyText}
+            className="p-2 rounded-lg hover:bg-gray-100"
+          >
+            <Copy size={18} />
+          </button>
+
+          <button
+            onClick={downloadText}
+            className="p-2 rounded-lg hover:bg-gray-100"
+          >
+            <Download size={18} />
+          </button>
+
+          {onRegenerate && (
+            <button
+              disabled={loading}
+              onClick={onRegenerate}
+              className="p-2 rounded-lg hover:bg-gray-100"
+            >
+              <RefreshCw
+                size={18}
+                className={loading ? "animate-spin" : ""}
+              />
+            </button>
+          )}
+
+        </div>
+
+      </div>
+
+      <div className="p-6">
+
+        <pre className="whitespace-pre-wrap leading-8 text-gray-700 font-sans">
+
+          {content}
+
+        </pre>
+
+      </div>
+
+    </div>
+  );
 }
