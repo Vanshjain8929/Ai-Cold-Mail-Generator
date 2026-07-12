@@ -15,32 +15,38 @@ const sendEmail = async (options) => {
         console.log("\nCreating transporter...");
 
         const transporter = nodemailer.createTransport({
-            service: "gmail",
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true,
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS,
             },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 10000,
         });
 
         console.log("Transporter created successfully");
 
-        await transporter.verify();
+
 
         console.log("✅ SMTP connected successfully");
 
         const mailOptions = {
-    from:
-        options.from ||
-        `"AI Cold Mail Generator" <${process.env.EMAIL_USER}>`,
+            from:
+                options.from ||
+                `"AI Cold Mail Generator" <${process.env.EMAIL_USER}>`,
 
-    to: options.to,
+            to: options.to,
 
-    subject: options.subject,
+            subject: options.subject,
 
-    text: options.text,
+            text: options.text,
 
-    html: options.html || `<p>${options.text}</p>`,
-};
+            html: options.html || `<p>${options.text}</p>`,
+        };
+        
 
         console.log("\nSending email...");
         console.log("To:", options.to);
